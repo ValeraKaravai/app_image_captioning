@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image captioning/title>
+    <link rel="stylesheet" type="text/css" href="../static/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Image captioning</h1>
+        <div>
+            <form method="post" enctype="multipart/form-data" id="form_upload">
+                <input type="file" name="image" id="choose_file" class="file">
+                <input type="text" name="ref" id="ref">
+                <input type="submit" value="Upload and predict caption for you image"
+                       class="btn btn-primary">
+            </form>
+            <div>
+                <h2>Results:</h2>
+                <h3 id="rec_results"></h3>
+                <h2>Prediction:</h2>
+                <h3 id="prediction"></h3>
+            </div>
+            <img name="image" id="image_upload"/>
+            <div>
+                <button type="button" class="btn btn-default butt" onclick="clearCanvas()">
+                    <strong>
+                        Clear
+                    </strong>
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+    <script src="../static/jquery.min.js"></script>
+    <script src="../static/bootstrap.min.js"></script>
+    <script src="../static/draw.js"></script>
+</body>
+</html>
