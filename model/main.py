@@ -1,12 +1,15 @@
 import tensorflow as tf
 from tensorflow.contrib import keras
 import numpy as np
-import matplotlib.pyplot as plt
-L = keras.layers
-K = keras.backend
 import model.utils as utils
 import os
 import logging
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')
+L = keras.layers
+K = keras.backend
+
 
 IMG_SIZE = 299
 
