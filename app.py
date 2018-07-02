@@ -7,6 +7,7 @@ from model.utils import download_file
 import sys
 import uuid
 
+
 UPLOAD_FOLDER = 'data/image/original'
 UPLOAD_FOLDER_CROP = 'data/image/crop'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
