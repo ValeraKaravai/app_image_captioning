@@ -5,6 +5,7 @@ import model.utils as utils
 import os
 import logging
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
 L = keras.layers
