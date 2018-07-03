@@ -1,10 +1,8 @@
-import json
 import os
 
 from flask import Flask, render_template, request, send_from_directory
-from model.main import apply_model_to_image_raw_bytes, save_pic_to_image_raw_bytes
+from model.main import Model
 from model.utils import download_file
-import sys
 import uuid
 
 
@@ -15,6 +13,7 @@ ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['UPLOAD_FOLDER_CROP'] = UPLOAD_FOLDER_CROP
+model = Model()
 
 
 @app.route("/", methods=["POST", "GET", 'OPTIONS'])
@@ -27,8 +26,8 @@ def index_page():
 def predict():
     if request.method == 'POST':
         filename = request.values['filename']
-        prediction = apply_model_to_image_raw_bytes(open((app.config['UPLOAD_FOLDER'] + '/{}').format(filename), "rb").read(),
-                                                    filename=filename)
+        prediction = model.apply_model_to_image_raw_bytes(open((app.config['UPLOAD_FOLDER'] + '/{}').format(filename), "rb").read(),
+                                                          filename=filename)
         return prediction
     return 'not'
 

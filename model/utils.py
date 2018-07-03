@@ -7,7 +7,6 @@ import cv2
 import numpy as np
 import pickle
 import requests as req
-import sys
 
 
 def image_center_crop(img):
