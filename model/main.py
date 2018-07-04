@@ -3,7 +3,10 @@ import boto3
 import logging
 import numpy as np
 import model.utils as utils
+import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
+matplotlib.use('agg')
 
 from tensorflow.contrib import keras
 from model.decoder import final_model, s
