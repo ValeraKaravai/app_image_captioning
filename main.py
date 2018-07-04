@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, after_this_request
 from model.main import Model
 from model.utils import download_file
 import uuid
@@ -26,8 +26,12 @@ def index_page():
 def predict():
     if request.method == 'POST':
         filename = request.values['filename']
-        prediction = model.apply_model_to_image_raw_bytes(open((app.config['UPLOAD_FOLDER'] + '/{}').format(filename), "rb").read(),
-                                                          filename=filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'],request.values['filename'])
+        prediction = model.apply_model_to_image_raw_bytes(open(filepath, "rb").read(),
+                                                          filename=filename,
+                                                          dir_save=app.config['UPLOAD_FOLDER_CROP'])
+        save = model.save_pic_amazon(filename=filepath)
+        # os.remove(filepath)
         return prediction
     return 'not'
 
@@ -49,6 +53,24 @@ def upload_file():
 
 @app.route('/<filename>')
 def uploaded_file_2(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER_CROP'],
+                             filename)
+    file_handle = open(file_path, 'r')
+
+    file_path_original = os.path.join(app.config['UPLOAD_FOLDER'],
+                                      filename)
+    file_handle_original = open(file_path_original, 'r')
+
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(file_path)
+            file_handle.close()
+            os.remove(file_path_original)
+            file_handle_original.close()
+        except Exception as error:
+            app.logger.error("Error removing or closing downloaded file handle", error)
+        return response
     return send_from_directory(app.config['UPLOAD_FOLDER_CROP'],
                                filename)
 

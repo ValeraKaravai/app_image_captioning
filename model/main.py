@@ -5,9 +5,11 @@ import numpy as np
 import model.utils as utils
 import matplotlib.pyplot as plt
 
-
 from tensorflow.contrib import keras
 from model.decoder import final_model, s
+from model.utils import download_dir_s3
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
 
 L = keras.layers
 K = keras.backend
@@ -16,6 +18,9 @@ IMG_SIZE = 299
 BUCKET = 'lkimagecptioning'
 PATH_WEIGHT = 'data/weights'
 REGION_HOST = 's3.us-east-2.amazonaws.com'
+VOCAB_PKL = 'data/weights/vocab_inverse.pkl'
+UPLOAD_FOLDER = 'data/image/original'
+UPLOAD_FOLDER_CROP = 'data/image/crop'
 
 
 class Model(object):
@@ -23,18 +28,36 @@ class Model(object):
         """
         Original weights are loaded from local folder, updated - from Amazon.
         """
-        # self.params = self.load_weights_amazon('weights')
         self.nothing=0
 
-    def load_weights_amazon(self, filename):
+    def load_weights_amazon(self, filepath):
         """
         Load weights from Amazon.
         """
-        s3 = boto3.client('s3',
-                          aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
-                          aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
-        s3.download_file(BUCKET, filename, os.path.join(PATH_WEIGHT, filename))
-        return os.path.join(PATH_WEIGHT, filename)
+        client = boto3.client('s3',
+                              aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                              aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+        resource = boto3.resource('s3')
+
+        download_dir_s3(client=client,
+                        resource=resource,
+                        bucket=BUCKET,
+                        local=PATH_WEIGHT,
+                        dist=filepath)
+
+    def save_pic_amazon(self, filename):
+        """
+        Save weights to Amazon.
+        """
+        REGION_HOST = 's3.us-east-2.amazonaws.com'
+        conn = S3Connection(aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                            aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+                            host=REGION_HOST)
+        bucket = conn.get_bucket(BUCKET)
+        k = Key(bucket)
+        k.key = filename
+        k.set_contents_from_filename(filename)
+        return ('Everything save')
 
     # this is an actual prediction loop
     def generate_caption(self, image, t=1, sample=False, max_len=20):
@@ -75,19 +98,20 @@ class Model(object):
             caption.append(next_word)
             if next_word == 0:
                 break
-        vocab_inverse = utils.read_pickle('data/vocab_inverse.pkl')
+        vocab_inverse = utils.read_pickle(VOCAB_PKL)
 
         return list(map(vocab_inverse.get, caption))
 
     # look at validation prediction example
-    def apply_model_to_image_raw_bytes(self, raw, filename):
+    def apply_model_to_image_raw_bytes(self, raw, filename, dir_save):
         logging.info('Get')
+        path_img = os.path.join(dir_save, filename)
         img = utils.decode_image_from_buf(raw)
         fig = plt.figure(figsize=(7, 7))
         plt.grid('off')
         plt.axis('off')
         plt.imshow(img)
-        plt.savefig('data/image/crop/{}'.format(filename), frameon=False,  bbox_inches='tight', pad_inches=0)
+        plt.savefig(path_img, frameon=False,  bbox_inches='tight', pad_inches=0)
         img = utils.crop_and_preprocess(img, (IMG_SIZE, IMG_SIZE), final_model.preprocess_for_model)
 
         return ' '.join(self.generate_caption(image=img)[1:-1])

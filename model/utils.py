@@ -1,7 +1,5 @@
 import os
-import queue
-import threading
-import zipfile
+import sys
 import tqdm
 import cv2
 import numpy as np
@@ -40,78 +38,6 @@ def crop_and_preprocess(img, input_shape, preprocess_for_model):
     return img
 
 
-def apply_model(zip_fn, model, preprocess_for_model, extensions=(".jpg",), input_shape=(224, 224), batch_size=32):
-    # queue for cropped images
-    q = queue.Queue(maxsize=batch_size * 10)
-
-    # when read thread put all images in queue
-    read_thread_completed = threading.Event()
-
-    # time for read thread to die
-    kill_read_thread = threading.Event()
-
-    def reading_thread(zip_fn):
-        zf = zipfile.ZipFile(zip_fn)
-        for fn in tqdm.tqdm_notebook(zf.namelist()):
-            if kill_read_thread.is_set():
-                break
-            if os.path.splitext(fn)[-1] in extensions:
-                buf = zf.read(fn)  # read raw bytes from zip for fn
-                img = decode_image_from_buf(buf)  # decode raw bytes
-                img = crop_and_preprocess(img, input_shape, preprocess_for_model)
-                while True:
-                    try:
-                        q.put((os.path.split(fn)[-1], img), timeout=1)  # put in queue
-                    except queue.Full:
-                        if kill_read_thread.is_set():
-                            break
-                        continue
-                    break
-
-        read_thread_completed.set()  # read all images
-
-    # start reading thread
-    t = threading.Thread(target=reading_thread, args=(zip_fn,))
-    t.daemon = True
-    t.start()
-
-    img_fns = []
-    img_embeddings = []
-
-    batch_imgs = []
-
-    def process_batch(batch_imgs):
-        batch_imgs = np.stack(batch_imgs, axis=0)
-        batch_embeddings = model.predict(batch_imgs)
-        img_embeddings.append(batch_embeddings)
-
-    try:
-        while True:
-            try:
-                fn, img = q.get(timeout=1)
-            except queue.Empty:
-                if read_thread_completed.is_set():
-                    break
-                continue
-            img_fns.append(fn)
-            batch_imgs.append(img)
-            if len(batch_imgs) == batch_size:
-                process_batch(batch_imgs)
-                batch_imgs = []
-            q.task_done()
-        # process last batch
-        if len(batch_imgs):
-            process_batch(batch_imgs)
-    finally:
-        kill_read_thread.set()
-        t.join()
-
-    q.join()
-
-    img_embeddings = np.vstack(img_embeddings)
-    return img_embeddings, img_fns
-
-
 def save_pickle(obj, fn):
     with open(fn, "wb") as f:
         pickle.dump(obj, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -142,3 +68,20 @@ def download_file(url, file_path):
             os.remove(file_path)
     if incomplete_download:
         raise Exception("Incomplete download")
+
+
+def download_dir_s3(client, resource, dist, local, bucket):
+    paginator = client.get_paginator('list_objects')
+    for result in paginator.paginate(Bucket=bucket, Delimiter='/', Prefix=dist):
+        if result.get('CommonPrefixes') is not None:
+            for subdir in result.get('CommonPrefixes'):
+                download_dir_s3(client, resource, subdir.get('Prefix'), local, bucket)
+        if result.get('Contents') is not None:
+            for file in result.get('Contents'):
+                print(file, file=sys.stdout)
+                print(file.get('Key'), file=sys.stdout)
+
+                if not file.get('Key').endswith('/'):
+                    resource.meta.client.download_file(bucket, file.get('Key'), local + os.sep + file.get('Key'))
+                elif not os.path.exists(os.path.dirname(local + os.sep + file.get('Key'))):
+                    os.makedirs(os.path.dirname(local + os.sep + file.get('Key')))

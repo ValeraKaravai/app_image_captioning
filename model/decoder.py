@@ -118,7 +118,7 @@ class final_model(object):
     s.run(tf.global_variables_initializer())
     # CNN encoder
     encoder, preprocess_for_model = get_cnn_encoder()
-    saver.restore(s, os.path.abspath("data/weights/weights"))  # keras applications corrupt our graph, so we restore trained weights
+    saver.restore(s, os.path.abspath("data/weights/weights"))
 
     # containers for current lstm state
     lstm_c = tf.Variable(tf.zeros([1, LSTM_UNITS]), name="cell")
