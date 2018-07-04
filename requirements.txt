@@ -1,0 +1,12 @@
+Flask==0.12.1
+matplotlib==2.2.2
+cv2wrap==1.0
+numpy==1.14.5
+requests==2.12.4
+tensorflow==1.2.1
+enum34==1.1.6
+boto3==1.7.50
+tqdm==4.23.4
+opencv-python==3.4.1.15
+h5py==2.8.0
+boto==2.48.0
