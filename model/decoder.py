@@ -1,6 +1,4 @@
 import os
-import numpy as np
-import model.utils as utils
 import tensorflow as tf
 from tensorflow.contrib import keras
 L = keras.layers
