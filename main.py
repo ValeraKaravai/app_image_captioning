@@ -1,5 +1,4 @@
 import os
-
 from flask import Flask, render_template, request, send_from_directory, after_this_request
 from model.main import Model
 from model.utils import download_file
