@@ -1,4 +1,4 @@
-Flask==0.12.1
+Flask==1.0
 matplotlib==2.2.2
 cv2wrap==1.0
 numpy==1.14.5
