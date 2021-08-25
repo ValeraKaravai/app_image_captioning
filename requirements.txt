@@ -3,7 +3,7 @@ matplotlib==2.2.2
 cv2wrap==1.0
 numpy==1.14.5
 requests==2.12.4
-tensorflow==1.12.1
+tensorflow==2.5.1
 enum34==1.1.6
 boto3==1.7.50
 tqdm==4.23.4
